@@ -48,18 +48,15 @@ def groupCols(arr):
 			groupedList.append(tempLst)
 	return groupedList
 
-img = cv2.imread("test2.jpg", 0)
+#Read the image, remove the noise, threshold the image to convert the image in binary format and invert it
+img = cv2.imread("hw.png", 0)
 img = cv2.fastNlMeansDenoising(img, h=20)
 img = cv2.threshold(img, 160, 255, cv2.THRESH_BINARY_INV)[1]
 
-#unique, counts = np.unique(img, return_counts=True)
-#print(dict(zip(unique, counts)))
-
+#Thin the image using the guo_hall thinning algorithm
 img = thinning.guo_hall_thinning(img.copy())
 
-#img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-
-
+#Keep track of the column indices with no white pixels and columns with one white pixel(ligature)
 zerosLst = []
 onesLst = []
 for i in range(img.shape[1]):
@@ -68,10 +65,15 @@ for i in range(img.shape[1]):
 	elif(np.sum(img[:, i]) == 255):
 		onesLst.append(i)
 
+#Group nearby columns from into a list(from 1-D list to list of lists)
 zerosLst = groupCols(zerosLst)
 onesLst = groupCols(onesLst)
+
+#Get the final indices of columns
 finalCols = []
 for col in zerosLst:
+	#Incase of very low number of cols in a region, ignore it(dont consider it as segmenting column(SC)).
+	#Here '7' is the hyperparameter
 	if(len(col) < 7):
 		continue
 	middleElem = col[int(len(col) / 2)]
@@ -83,13 +85,10 @@ for col in onesLst:
 	middleElem = col[int(len(col) / 2)]
 	finalCols.append(middleElem)
 
+#Show the segmenting column in the image
 for elem in finalCols:
 	img[:, elem] = 255
-print(finalCols)
 
-#img = np.delete(img, zerosLst, axis=1)
-#print(img.shape)
-
-cv2.imshow("skel", img)
+cv2.imshow("Segmented Image", img)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
